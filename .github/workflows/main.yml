@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Install dependencies
       run: |
@@ -20,20 +19,24 @@ jobs:
     - name: Download Clang
       run: git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 
-    - name: Prepare kernel config
+    - name: Setup kernel config
       run: |
         export ARCH=arm64
         mkdir -p out
         make O=out exynos9820-beyond1lte_defconfig
 
-        # Disable Initramfs and VDSO for x86 build
+        # Disable host-only features
         scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
         scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Update .config
+        # Overclock CPU & GPU
+        scripts/config --file out/.config --set-val CONFIG_ARM_BIG_LITTLE y
+        scripts/config --file out/.config --set-val CONFIG_ARM64_EXYNOS_FREQ 2900000
+        scripts/config --file out/.config --set-val CONFIG_EXYNOS_GPU_MAX_CLOCK 800000000
+
         make O=out olddefconfig
 
     - name: Build kernel
