@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler clang-17 lld-17
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler
 
     - name: Download toolchains
       run: |
