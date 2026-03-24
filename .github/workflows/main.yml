@@ -25,6 +25,7 @@ jobs:
         export CROSS_COMPILE=aarch64-linux-gnu-
         export CC=clang
         export LD=ld.lld
+        make exynos9820-beyond1lte_defconfig O=out ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
         # Standard config
         make exynos9820-beyond1lte_defconfig O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
         # VDSO/Initramfs deaktivieren
@@ -32,9 +33,15 @@ jobs:
         scripts/config --file $O/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file $O/.config --disable CONFIG_INITRAMFS_SOURCE
         make olddefconfig O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
+        make olddefconfig O=out ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
     - name: Build Kernel
       run: |
+        export ARCH=arm64
+        export O=out
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        export CC=clang
+        export LD=ld.lld
         make -j$(nproc) O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CC=clang LD=ld.lld
 
     - name: Upload Kernel
