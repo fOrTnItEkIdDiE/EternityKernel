@@ -22,36 +22,37 @@ jobs:
 
     - name: Download toolchains
       run: |
-        mkdir -p $PWD/toolchains
-        cd $PWD/toolchains
+        mkdir -p toolchains
+        cd toolchains
 
-        # 64-bit GCC
-        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/master.tar.gz -O gcc64.tar.gz
+        # ==== GCC64 ====
+        wget https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/releases/download/root/clang64-gcc64-prebuilt.tar.gz -O gcc64.tar.gz
         mkdir gcc64
-        tar -xf gcc64.tar.gz -C gcc64 --strip-components=2
+        tar -xf gcc64.tar.gz -C gcc64 --strip-components=1
 
-        # 32-bit GCC
-        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/master.tar.gz -O gcc32.tar.gz
+        # ==== GCC32 ====
+        wget https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9/releases/download/root/clang32-gcc32-prebuilt.tar.gz -O gcc32.tar.gz
         mkdir gcc32
-        tar -xf gcc32.tar.gz -C gcc32 --strip-components=2
+        tar -xf gcc32.tar.gz -C gcc32 --strip-components=1
 
-        # Clang 17 standalone
-        wget https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/-/archive/17/clang-17.zip -O clang.zip
-        unzip clang.zip
-        mv android_prebuilts_clang-standalone-17 clang
+        # ==== Clang 17 ====
+        wget https://github.com/LineageOS/android_prebuilts_clang-clang-r450784/releases/download/root/clang-r450784-prebuilt.tar.gz -O clang.tar.gz
+        mkdir clang
+        tar -xf clang.tar.gz -C clang --strip-components=1
 
         cd $GITHUB_WORKSPACE
 
     - name: Build kernel
       run: |
         export ARCH=arm64
+        export O=out
         export CLANG_PATH=$PWD/toolchains/clang/bin
         export GCC64_PATH=$PWD/toolchains/gcc64/bin
         export GCC32_PATH=$PWD/toolchains/gcc32/bin
         export PATH=$CLANG_PATH:$GCC64_PATH:$GCC32_PATH:$PATH
+
         export CROSS_COMPILE=aarch64-linux-android-
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
-        export CLANG_TRIPLE=aarch64-linux-gnu-
         export CC=$CLANG_PATH/clang
         export LD=$CLANG_PATH/ld.lld
         export AR=$CLANG_PATH/llvm-ar
@@ -60,9 +61,10 @@ jobs:
         export OBJDUMP=$CLANG_PATH/llvm-objdump
         export STRIP=$CLANG_PATH/llvm-strip
 
-        make exynos9820-beyond1lte_defconfig
-        make olddefconfig O=out ARCH=arm64
-        make -j$(nproc) O=out DTC=$(which dtc)
+        # defconfig + build
+        make O=$O ARCH=arm64 exynos9820-beyond1lte_defconfig
+        make O=$O ARCH=arm64 olddefconfig
+        make -j$(nproc) O=$O ARCH=arm64 DTC=$(which dtc)
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
