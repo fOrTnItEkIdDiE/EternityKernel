@@ -9,46 +9,34 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Install dependencies
       run: |
-        sudo apt update
-        sudo apt install -y bc bison flex libssl-dev libelf-dev git make gcc-aarch64-linux-gnu clang lld
+        sudo apt-get update
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 ccache
 
     - name: Download toolchains
       run: |
-        sudo apt install -y unzip
-        wget https://github.com/LineageOS/android_prebuilts_clang_host_linux-x86/archive/refs/heads/clang-r416183b.zip -O clang.zip
-        unzip clang.zip
-        mv android_prebuilts_clang_host_linux-x86-clang-r416183b clang
-        
         git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc64
         git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
+        git clone --depth=1 https://github.com/ZyCromerZ/Clang clang
 
-    - name: Setup environment
+    - name: Build kernel
       run: |
-        mkdir -p out
         export ARCH=arm64
-        export O=out
-        export CROSS_COMPILE=aarch64-linux-gnu-
+        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
+        export CROSS_COMPILE=aarch64-linux-android-
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
         export CC=clang
-        
-        make exynos9820-beyond1lte_defconfig O=out ARCH=arm64
-        
-        scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
-        scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
-        scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
-        
-        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
-        scripts/config --file out/.config --disable CONFIG_STACKPROTECTOR
-        
-        make olddefconfig O=out ARCH=arm64
-        
-    - name: Build Kernel
-      run: |
-        export ARCH=arm64
-        export O=out
-        export CROSS_COMPILE=aarch64-linux-gnu-
-        make -j$(nproc) O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CC=clang
+        export CLANG_TRIPLE=aarch64-linux-gnu-
+        make exynos9820-beyond1lte_defconfig
+        make -j$(nproc)
+
+    - name: Upload kernel image
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-image
+        path: arch/arm64/boot/Image
