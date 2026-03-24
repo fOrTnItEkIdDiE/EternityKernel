@@ -25,10 +25,12 @@ jobs:
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
-        export CROSS_COMPILE=aarch64-linux-android-
-        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+        export PATH=$PWD/clang/bin:$PATH
         export CC=clang
+        export LD=ld.lld
+        export LLVM=1
+        export LLVM_IAS=1
+
         make exynos9820-beyond1lte_defconfig
         chmod +x scripts/config
         scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
