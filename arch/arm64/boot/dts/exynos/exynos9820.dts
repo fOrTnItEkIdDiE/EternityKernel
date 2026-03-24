@@ -9918,11 +9918,11 @@
 			cal-id = <0xb040004>;
 			dm-type = <0x2>;
 			need-awake;
-			max-freq = <0x1fbd00>;
+			max-freq = <0x2BEA40>;
 			min-freq = <0x7ef40>;
 			pm_qos-min-class = <0x7>;
 			pm_qos-max-class = <0x8>;
-			pm_qos-booting = <0x1fbd00>;
+			pm_qos-booting = <0x2BEA40>;
 			#cooling-cells = <0x2>;
 			linux,phandle = <0x10e>;
 			phandle = <0x10e>;
