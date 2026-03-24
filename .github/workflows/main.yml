@@ -25,11 +25,13 @@ jobs:
     - name: Build kernel
       run: |
         export ARCH=arm64
+        export SUBARCH=arm64
         export PATH=$PWD/clang/bin:$PATH
         export CC=clang
         export LD=ld.lld
         export LLVM=1
         export LLVM_IAS=1
+        export CLANG_TRIPLE=aarch64-linux-gnu-
 
         make exynos9820-beyond1lte_defconfig
         chmod +x scripts/config
