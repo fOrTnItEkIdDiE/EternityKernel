@@ -22,30 +22,30 @@ jobs:
 
     - name: Download toolchains
       run: |
-        mkdir -p $PWD/toolchains/gcc64
-        mkdir -p $PWD/toolchains/gcc32
-        mkdir -p $PWD/toolchains/clang
-
+        mkdir -p $PWD/toolchains
         cd $PWD/toolchains
 
         # 64-bit GCC
         wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/master.tar.gz -O gcc64.tar.gz
-        tar -xf gcc64.tar.gz -C gcc64 --strip-components=1
+        mkdir gcc64
+        tar -xf gcc64.tar.gz -C gcc64 --strip-components=2
 
         # 32-bit GCC
         wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/master.tar.gz -O gcc32.tar.gz
-        tar -xf gcc32.tar.gz -C gcc32 --strip-components=1
+        mkdir gcc32
+        tar -xf gcc32.tar.gz -C gcc32 --strip-components=2
 
-        # Standalone Clang 17
+        # Clang 17 standalone
         wget https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/-/archive/17/clang-17.zip -O clang.zip
-        unzip clang.zip -d clang
+        unzip clang.zip
+        mv android_prebuilts_clang-standalone-17 clang
 
         cd $GITHUB_WORKSPACE
 
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export CLANG_PATH=$PWD/toolchains/clang/clang-17/bin
+        export CLANG_PATH=$PWD/toolchains/clang/bin
         export GCC64_PATH=$PWD/toolchains/gcc64/bin
         export GCC32_PATH=$PWD/toolchains/gcc32/bin
         export PATH=$CLANG_PATH:$GCC64_PATH:$GCC32_PATH:$PATH
