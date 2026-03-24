@@ -24,26 +24,35 @@ jobs:
 
     - name: Build kernel
       run: |
+        # Kernel Build Environment
         export ARCH=arm64
-        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
-        
+        export CC=clang
         export CROSS_COMPILE=aarch64-linux-android-
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
         export CLANG_TRIPLE=aarch64-linux-gnu-
-        export CC=clang
+        export PATH=$PWD/clang/bin:$PATH
         export LLVM=1
         export LLVM_IAS=1
         export LD=ld.lld
-        
+
+        # Kernel Configuration
         make exynos9820-beyond1lte_defconfig
-        
+
+        # Deaktiviere Funktionen, die Fehler verursachen
         scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
         scripts/config --disable CONFIG_CC_STACKPROTECTOR
-        
+        scripts/config --disable CONFIG_ARM64_VDSO
+        scripts/config --disable CONFIG_INITRAMFS_SOURCE
+
+        # Optional: Overclock Einstellungen (CPU + GPU) einfügen
+        scripts/config --set-val CONFIG_S10_CPU_OC 2900000000   # 2.9 GHz
+        scripts/config --set-val CONFIG_S10_GPU_OC 800000000    # 800 MHz
+
+        # Kernel Build
         make -j$(nproc) \
-        CC=clang \
-        CLANG_TRIPLE=aarch64-linux-gnu- \
-        LD=ld.lld
+          CC=clang \
+          CLANG_TRIPLE=aarch64-linux-gnu- \
+          LD=ld.lld
 
     - name: Upload kernel
       uses: actions/upload-artifact@v4
