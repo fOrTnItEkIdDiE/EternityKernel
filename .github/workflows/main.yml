@@ -28,28 +28,21 @@ jobs:
         export ARCH=arm64
         export PATH=$PWD/clang/bin:$PATH
 
-        # Load default config
-        make exynos9820-beyond1lte_defconfig
+        # Out-of-tree build (alles in 'out' speichern)
+        mkdir -p out
 
-        # Disable VDSO and initramfs to avoid host execution errors
-        scripts/config --disable CONFIG_BLK_DEV_INITRD
-        scripts/config --disable CONFIG_INITRAMFS_SOURCE
-        scripts/config --disable CONFIG_ARM64_VDSO
-        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_NONE
-        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_GZIP
-        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_XZ
-        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_LZ4
-        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_BZIP2
+        # Lade Default Config direkt ins Out-Verzeichnis
+        make O=out exynos9820-beyond1lte_defconfig
 
-        # Disable stack protectors if causing build issues
-        scripts/config --disable CONFIG_CC_STACKPROTECTOR
-        scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+        # Optional: Stackprotector und Initramfs deaktivieren
+        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
+        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+        scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
+        scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
+        scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
 
-        # Set CPU overclock (optional, for your .config tuning)
-        # Hier kannst du Frequency-Limits setzen, z.B. 2.9GHz für S10
-        scripts/config --enable CONFIG_SAMSUNG_EXYNOS_CPU_OVERDRIVE
-
-        make olddefconfig
+        # Alte Config anpassen (keine Prompts)
+        make O=out olddefconfig
 
     - name: Build Kernel
       run: |
@@ -60,9 +53,8 @@ jobs:
         export LD=ld.lld
         export CLANG_TRIPLE=aarch64-linux-gnu-
 
-        # Build kernel
-        make -j$(nproc) CC=clang LD=ld.lld \
-             O=out
+        # Build kernel (Out-of-tree)
+        make -j$(nproc) O=out CC=clang LD=ld.lld
 
     - name: Upload kernel
       uses: actions/upload-artifact@v4
