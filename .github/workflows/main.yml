@@ -35,11 +35,15 @@ jobs:
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
 
         make exynos9820-beyond1lte_defconfig O=out ARCH=arm64
-
+        
         scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
         scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
-
+        
+        
+        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+        scripts/config --file out/.config --disable CONFIG_STACKPROTECTOR
+        
         make olddefconfig O=out ARCH=arm64
 
     - name: Build Kernel
