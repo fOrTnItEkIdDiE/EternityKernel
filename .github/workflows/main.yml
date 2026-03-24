@@ -16,9 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          bc bison flex libssl-dev libelf-dev git make python3 \
-          binutils-aarch64-linux-gnu device-tree-compiler ccache
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler
 
     - name: Download toolchains
       run: |
@@ -29,6 +27,7 @@ jobs:
     - name: Build kernel
       run: |
         export ARCH=arm64
+        export O=out
         export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
         export CROSS_COMPILE=aarch64-linux-android-
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
@@ -40,10 +39,17 @@ jobs:
         export OBJDUMP=$PWD/clang/bin/llvm-objdump
         export STRIP=$PWD/clang/bin/llvm-strip
         export DTC=$(which dtc)
-        export O=out
-        make exynos9820-beyond1lte_defconfig
+
+        # Generate default config in 'out' directory
+        make O=$O ARCH=arm64 exynos9820-beyond1lte_defconfig
+
+        # Disable stack protector in the config
         scripts/config --file $O/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
-        make olddefconfig O=$O ARCH=arm64
+
+        # Apply olddefconfig to accept changes
+        make O=$O ARCH=arm64 olddefconfig
+
+        # Build the kernel
         make -j$(nproc) O=$O ARCH=arm64 \
           CC=$CC LD=$LD AR=$AR NM=$NM OBJCOPY=$OBJCOPY OBJDUMP=$OBJDUMP STRIP=$STRIP DTC=$DTC
 
