@@ -22,7 +22,7 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc64
         git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
-        git clone --depth=1 -b 17 https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone clang
+        git clone --depth=1 -b 12 https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone clang
 
     - name: Build kernel
       run: |
@@ -41,7 +41,6 @@ jobs:
         export OBJCOPY=$CLANG_PATH/llvm-objcopy
         export OBJDUMP=$CLANG_PATH/llvm-objdump
         export STRIP=$CLANG_PATH/llvm-strip
-        export DTC_FLAGS="-@"
         make exynos9820-beyond1lte_defconfig
         make -j$(nproc) DTC=$(which dtc)
 
