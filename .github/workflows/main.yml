@@ -20,15 +20,18 @@ jobs:
           bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu \
           device-tree-compiler clang lld zip unzip
 
-    - name: Download prebuilt toolchains
+    - name: Download toolchains
       run: |
         mkdir -p $PWD/toolchains
         cd $PWD/toolchains
-        wget -O gcc64.zip https://example.com/gcc64.zip
-        wget -O gcc32.zip https://example.com/gcc32.zip
-        wget -O clang.zip https://example.com/clang.zip
-        unzip gcc64.zip -d gcc64
-        unzip gcc32.zip -d gcc32
+        # LineageOS 64-bit GCC
+        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/master.tar.gz -O gcc64.tar.gz
+        tar -xf gcc64.tar.gz -C gcc64 --strip-components=1
+        # LineageOS 32-bit GCC
+        wget https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/master.tar.gz -O gcc32.tar.gz
+        tar -xf gcc32.tar.gz -C gcc32 --strip-components=1
+        # Standalone Clang 17 (public GitLab mirror)
+        wget https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone/-/archive/17/clang-17.zip -O clang.zip
         unzip clang.zip -d clang
         cd $GITHUB_WORKSPACE
 
