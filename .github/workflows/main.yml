@@ -9,17 +9,17 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout source
+    - name: Checkout Kernel Source
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make curl
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make curl cpio
 
-    - name: Download Clang toolchain
+    - name: Download Clang Toolchain
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 
@@ -27,7 +27,6 @@ jobs:
       run: |
         export ARCH=arm64
         export PATH=$PWD/clang/bin:$PATH
-
         mkdir -p out
 
         # Lade Default Config
@@ -40,7 +39,7 @@ jobs:
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Olddefconfig anwenden (keine Prompts)
+        # Olddefconfig anwenden, keine Prompts
         make O=out olddefconfig
 
     - name: Build Kernel
@@ -54,7 +53,7 @@ jobs:
 
         make -j$(nproc) O=out CC=clang LD=ld.lld
 
-    - name: Upload kernel
+    - name: Upload Kernel
       uses: actions/upload-artifact@v4
       with:
         name: kernel
