@@ -22,45 +22,52 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 
-    - name: Build kernel
+     - name: Prepare Kernel Config
       run: |
-        # Kernel Build Environment
         export ARCH=arm64
-        export CC=clang
-        export CROSS_COMPILE=aarch64-linux-android-
-        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
-        export CLANG_TRIPLE=aarch64-linux-gnu-
         export PATH=$PWD/clang/bin:$PATH
-        export LLVM=1
-        export LLVM_IAS=1
-        export LD=ld.lld
 
-        # Kernel Configuration
+        # Load default config
         make exynos9820-beyond1lte_defconfig
 
-        # Deaktiviere Funktionen, die Fehler verursachen
-        scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
-        scripts/config --disable CONFIG_CC_STACKPROTECTOR
-        scripts/config --disable CONFIG_ARM64_VDSO
-        scripts/config --disable CONFIG_INITRAMFS_SOURCE
+        # Disable VDSO and initramfs to avoid host execution errors
         scripts/config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --disable CONFIG_INITRAMFS_SOURCE
+        scripts/config --disable CONFIG_ARM64_VDSO
         scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_NONE
         scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_GZIP
         scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_XZ
         scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_LZ4
         scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_BZIP2
-        scripts/config --disable CONFIG_ARM64_VDSO
 
-        # Optional: Overclock Einstellungen (CPU + GPU) einfügen
-        scripts/config --set-val CONFIG_S10_CPU_OC 2900000000   # 2.9 GHz
-        scripts/config --set-val CONFIG_S10_GPU_OC 800000000    # 800 MHz
+        # Disable stack protectors if causing build issues
+        scripts/config --disable CONFIG_CC_STACKPROTECTOR
+        scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Kernel Build
-        make -j$(nproc) \
-          CC=clang \
-          CLANG_TRIPLE=aarch64-linux-gnu- \
-          LD=ld.lld
+        # Set CPU overclock (optional, for your .config tuning)
+        # Hier kannst du Frequency-Limits setzen, z.B. 2.9GHz für S10
+        scripts/config --enable CONFIG_SAMSUNG_EXYNOS_CPU_OVERDRIVE
+
+        make olddefconfig
+
+    - name: Build Kernel
+      run: |
+        export ARCH=arm64
+        export PATH=$PWD/clang/bin:$PATH
+        export CROSS_COMPILE=aarch64-linux-android-
+        export CC=clang
+        export LD=ld.lld
+        export CLANG_TRIPLE=aarch64-linux-gnu-
+
+        # Build kernel
+        make -j$(nproc) CC=clang LD=ld.lld \
+             O=out
+
+    - name: Upload kernel
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel
+        path: out/arch/arm64/boot/Image
 
     - name: Upload kernel
       uses: actions/upload-artifact@v4
