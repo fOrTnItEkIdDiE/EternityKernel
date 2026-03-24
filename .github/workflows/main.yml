@@ -1,0 +1,41 @@
+name: Build Kernel
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        depth: 1
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make
+
+    - name: Download Clang toolchain
+      run: |
+        git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc64
+        git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+
+    - name: Build kernel
+      run: |
+        export ARCH=arm64
+        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
+        export CROSS_COMPILE=aarch64-linux-android-
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+        export CC=clang
+        make exynos9820-beyond1lte_defconfig
+        make -j$(nproc)
+
+    - name: Upload kernel
+      uses: actions/upload-artifact@v3
+      with:
+        name: kernel
+        path: arch/arm64/boot/Image
