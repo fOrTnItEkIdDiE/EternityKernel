@@ -9,37 +9,34 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout Kernel Source
+    - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
 
-    - name: Install Dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make curl cpio
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make cpio
 
-    - name: Download Clang Toolchain
-      run: |
-        git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+    - name: Download Clang
+      run: git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 
-    - name: Prepare Kernel Config
+    - name: Prepare kernel config
       run: |
         export ARCH=arm64
         mkdir -p out
         make O=out exynos9820-beyond1lte_defconfig
 
-        # Disable initramfs + VDSO + stackprotector
+        # Disable things that break x86 host build
         scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
         scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Apply defaults silently
+        # Update .config silently
         make O=out olddefconfig
 
-    - name: Build Kernel
+    - name: Build kernel
       run: |
         export ARCH=arm64
         export PATH=$PWD/clang/bin:$PATH
@@ -49,7 +46,7 @@ jobs:
         export CLANG_TRIPLE=aarch64-linux-gnu-
         make -j$(nproc) O=out CC=clang LD=ld.lld
 
-    - name: Upload Kernel
+    - name: Upload kernel
       uses: actions/upload-artifact@v4
       with:
         name: kernel
