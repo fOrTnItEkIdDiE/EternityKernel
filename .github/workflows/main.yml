@@ -26,20 +26,17 @@ jobs:
     - name: Prepare Kernel Config
       run: |
         export ARCH=arm64
-        export PATH=$PWD/clang/bin:$PATH
         mkdir -p out
-
-        # Lade Default Config
         make O=out exynos9820-beyond1lte_defconfig
 
-        # Deaktiviere Initramfs + VDSO
+        # Disable initramfs + VDSO + stackprotector
         scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
         scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Olddefconfig anwenden, keine Prompts
+        # Apply defaults silently
         make O=out olddefconfig
 
     - name: Build Kernel
@@ -50,7 +47,6 @@ jobs:
         export CC=clang
         export LD=ld.lld
         export CLANG_TRIPLE=aarch64-linux-gnu-
-
         make -j$(nproc) O=out CC=clang LD=ld.lld
 
     - name: Upload Kernel
