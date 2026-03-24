@@ -32,6 +32,9 @@ jobs:
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
         export CC=clang
         make exynos9820-beyond1lte_defconfig
+        chmod +x scripts/config
+        scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+        scripts/config --disable CONFIG_CC_STACKPROTECTOR
         make -j$(nproc)
 
     - name: Upload kernel
