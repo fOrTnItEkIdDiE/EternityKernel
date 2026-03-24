@@ -1,61 +1,58 @@
-Skip to content
-fOrTnItEkIdDiE
-EternityKernel
-Repository navigation
-Code
-Pull requests
-Actions
-Projects
-Wiki
-Security
-Insights
-Settings
-Build Kernel
-Update main.yml #45
-All jobs
-Run details
-build
-failed now in 45s
-Search logs
-1s
-21s
-14s
-Preparing to unpack .../device-tree-compiler_1.6.1-1_amd64.deb ...
-Unpacking device-tree-compiler (1.6.1-1) ...
-Setting up binutils-aarch64-linux-gnu (2.38-4ubuntu2.12) ...
-Setting up libfdt1:amd64 (1.6.1-1) ...
-Setting up libelf-dev:amd64 (0.186-1ubuntu0.1) ...
-Setting up device-tree-compiler (1.6.1-1) ...
-Processing triggers for man-db (2.10.2-1) ...
-Not building database; man-db/auto-update is not 'true'.
-Processing triggers for libc-bin (2.35-0ubuntu3.12) ...
-Running kernel seems to be up-to-date.
-No services need to be restarted.
-No containers need to be restarted.
-No user sessions are running outdated binaries.
-No VM guests are running outdated hypervisor (qemu) binaries on this host.
-6s
-Run # GCC 64-bit
-Cloning into 'gcc64'...
-Cloning into 'gcc32'...
-Cloning into 'clang'...
-fatal: could not read Username for 'https://github.com': No such device or address
-Error: Process completed with exit code 128.
-0s
-0s
-0s
-Post job cleanup.
-/usr/bin/git version
-git version 2.53.0
-Temporarily overriding HOME='/home/runner/work/_temp/22f00fce-6614-4bf4-bbdb-30c6e1b47da6' before making global git config changes
-Adding repository directory to the temporary git global config as a safe directory
-/usr/bin/git config --global --add safe.directory /home/runner/work/EternityKernel/EternityKernel
-/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
-/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
-/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
-http.https://github.com/.extraheader
-/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
-/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
-/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
-/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
-0s
+name: Build Kernel
+
+on:
+  push:
+    branches: [ stable ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler wget unzip
+
+    - name: Download toolchains
+      run: |
+        # Use HTTPS URLs that are public and don’t need auth
+        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git gcc64
+        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git gcc32
+        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_clang-clang-r450784.git clang
+
+    - name: Build kernel
+      run: |
+        export ARCH=arm64
+        export CLANG_PATH=$PWD/clang/bin
+        export GCC64_PATH=$PWD/gcc64/bin
+        export GCC32_PATH=$PWD/gcc32/bin
+        export PATH=$CLANG_PATH:$GCC64_PATH:$GCC32_PATH:$PATH
+        export CROSS_COMPILE=aarch64-linux-android-
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+        export CLANG_TRIPLE=aarch64-linux-gnu-
+        export CC=$CLANG_PATH/clang
+        export LD=$CLANG_PATH/ld.lld
+        export AR=$CLANG_PATH/llvm-ar
+        export NM=$CLANG_PATH/llvm-nm
+        export OBJCOPY=$CLANG_PATH/llvm-objcopy
+        export OBJDUMP=$CLANG_PATH/llvm-objdump
+        export STRIP=$CLANG_PATH/llvm-strip
+
+        # Use defconfig
+        make exynos9820-beyond1lte_defconfig
+        make olddefconfig O=out ARCH=arm64
+
+        # Compile kernel
+        make -j$(nproc) O=out DTC=$(which dtc) ARCH=arm64
+
+    - name: Upload kernel image
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-image
+        path: out/arch/arm64/boot/Image
