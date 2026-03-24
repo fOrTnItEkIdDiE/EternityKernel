@@ -44,6 +44,13 @@ jobs:
         scripts/config --disable CONFIG_ARM64_VDSO
         scripts/config --disable CONFIG_INITRAMFS_SOURCE
         scripts/config --disable CONFIG_BLK_DEV_INITRD
+        scripts/config --disable CONFIG_INITRAMFS_SOURCE
+        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_NONE
+        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_GZIP
+        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_XZ
+        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_LZ4
+        scripts/config --disable CONFIG_INITRAMFS_COMPRESSION_BZIP2
+        scripts/config --disable CONFIG_ARM64_VDSO
 
         # Optional: Overclock Einstellungen (CPU + GPU) einfügen
         scripts/config --set-val CONFIG_S10_CPU_OC 2900000000   # 2.9 GHz
