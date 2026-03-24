@@ -9,20 +9,21 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout source
+      uses: actions/checkout@v4
       with:
         fetch-depth: 1
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make curl
 
     - name: Download Clang toolchain
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 
-     - name: Prepare Kernel Config
+    - name: Prepare Kernel Config
       run: |
         export ARCH=arm64
         export PATH=$PWD/clang/bin:$PATH
@@ -68,9 +69,3 @@ jobs:
       with:
         name: kernel
         path: out/arch/arm64/boot/Image
-
-    - name: Upload kernel
-      uses: actions/upload-artifact@v4
-      with:
-        name: kernel
-        path: arch/arm64/boot/Image
