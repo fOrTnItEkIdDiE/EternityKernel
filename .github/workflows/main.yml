@@ -26,14 +26,14 @@ jobs:
         mkdir -p out
         make O=out exynos9820-beyond1lte_defconfig
 
-        # Disable things that break x86 host build
+        # Disable Initramfs and VDSO for x86 build
         scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
         scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
         scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
         scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
 
-        # Update .config silently
+        # Update .config
         make O=out olddefconfig
 
     - name: Build kernel
