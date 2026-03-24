@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler
 
     - name: Download toolchains
       run: |
@@ -41,8 +41,9 @@ jobs:
         export OBJCOPY=$CLANG_PATH/llvm-objcopy
         export OBJDUMP=$CLANG_PATH/llvm-objdump
         export STRIP=$CLANG_PATH/llvm-strip
+        export DTC_FLAGS="-@"
         make exynos9820-beyond1lte_defconfig
-        make -j$(nproc)
+        make -j$(nproc) DTC=$(which dtc)
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
