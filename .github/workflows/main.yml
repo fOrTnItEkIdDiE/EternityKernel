@@ -9,33 +9,38 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 1
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu device-tree-compiler wget unzip
+        sudo apt-get install -y \
+          bc bison flex libssl-dev libelf-dev git make python3 binutils-aarch64-linux-gnu \
+          device-tree-compiler clang lld zip unzip
 
-    - name: Download toolchains
+    - name: Download prebuilt toolchains
       run: |
-        # Use HTTPS URLs that are public and don’t need auth
-        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git gcc64
-        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git gcc32
-        git clone --depth=1 https://gitlab.com/LineageOS/android_prebuilts_clang-clang-r450784.git clang
+        mkdir -p $PWD/toolchains
+        cd $PWD/toolchains
+        wget -O gcc64.zip https://example.com/gcc64.zip
+        wget -O gcc32.zip https://example.com/gcc32.zip
+        wget -O clang.zip https://example.com/clang.zip
+        unzip gcc64.zip -d gcc64
+        unzip gcc32.zip -d gcc32
+        unzip clang.zip -d clang
+        cd $GITHUB_WORKSPACE
 
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export CLANG_PATH=$PWD/clang/bin
-        export GCC64_PATH=$PWD/gcc64/bin
-        export GCC32_PATH=$PWD/gcc32/bin
+        export CLANG_PATH=$PWD/toolchains/clang/bin
+        export GCC64_PATH=$PWD/toolchains/gcc64/bin
+        export GCC32_PATH=$PWD/toolchains/gcc32/bin
         export PATH=$CLANG_PATH:$GCC64_PATH:$GCC32_PATH:$PATH
         export CROSS_COMPILE=aarch64-linux-android-
         export CROSS_COMPILE_ARM32=arm-linux-androideabi-
-        export CLANG_TRIPLE=aarch64-linux-gnu-
         export CC=$CLANG_PATH/clang
         export LD=$CLANG_PATH/ld.lld
         export AR=$CLANG_PATH/llvm-ar
@@ -43,13 +48,10 @@ jobs:
         export OBJCOPY=$CLANG_PATH/llvm-objcopy
         export OBJDUMP=$CLANG_PATH/llvm-objdump
         export STRIP=$CLANG_PATH/llvm-strip
-
-        # Use defconfig
         make exynos9820-beyond1lte_defconfig
+        scripts/config --file .config --disable CONFIG_CC_STACKPROTECTOR_STRONG
         make olddefconfig O=out ARCH=arm64
-
-        # Compile kernel
-        make -j$(nproc) O=out DTC=$(which dtc) ARCH=arm64
+        make -j$(nproc) O=out DTC=$(which dtc)
 
     - name: Upload kernel image
       uses: actions/upload-artifact@v4
