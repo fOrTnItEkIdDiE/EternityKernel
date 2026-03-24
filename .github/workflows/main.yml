@@ -1,4 +1,4 @@
-name: Build Kernel
+name: Build EternityKernel
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-    name: Build EternityKernel
     runs-on: ubuntu-latest
 
     env:
@@ -23,16 +22,15 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential clang lld bc bison flex libssl-dev libncurses5-dev crossbuild-essential-arm64
+          sudo apt install -y build-essential clang lld bc bison flex libssl-dev libncurses5-dev crossbuild-essential-arm64 git
 
       - name: Prepare Kernel Config
         run: |
-          cd $GITHUB_WORKSPACE
           mkdir -p $O
-          cp defconfig $O/.config || true   # optional: falls du ein default defconfig hast
+          # Falls du eine defconfig hast, z.B. lineage_defconfig oder irgendein default:
+          cp arch/arm64/configs/defconfig $O/.config || true
           make O=$O ARCH=$ARCH olddefconfig
 
       - name: Build Kernel
         run: |
-          cd $GITHUB_WORKSPACE
           make -j$(nproc) O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CC=clang LD=ld.lld
