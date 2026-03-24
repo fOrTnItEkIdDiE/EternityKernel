@@ -24,21 +24,32 @@ jobs:
         git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
         git clone --depth=1 -b 17 https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone clang
 
-    - name: Build kernel
-      run: |
-        export ARCH=arm64
-        export O=out
-        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
-        export CROSS_COMPILE=aarch64-linux-android-
-        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
-        export CC=$PWD/clang/bin/clang
-        export LD=$PWD/clang/bin/ld.lld
-        export AR=$PWD/clang/bin/llvm-ar
-        export NM=$PWD/clang/bin/llvm-nm
-        export OBJCOPY=$PWD/clang/bin/llvm-objcopy
-        export OBJDUMP=$PWD/clang/bin/llvm-objdump
-        export STRIP=$PWD/clang/bin/llvm-strip
-        export DTC=$(which dtc)
+    -- name: Build kernel
+  run: |
+    export ARCH=arm64
+    export O=out
+    export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
+    export CROSS_COMPILE=aarch64-linux-android-
+    export CROSS_COMPILE_ARM32=arm-linux-androideabi-
+    export CC=$PWD/clang/bin/clang
+    export LD=$PWD/clang/bin/ld.lld
+    export AR=$PWD/clang/bin/llvm-ar
+    export NM=$PWD/clang/bin/llvm-nm
+    export OBJCOPY=$PWD/clang/bin/llvm-objcopy
+    export OBJDUMP=$PWD/clang/bin/llvm-objdump
+    export STRIP=$PWD/clang/bin/llvm-strip
+    export DTC=$(which dtc)
+
+    make O=$O ARCH=arm64 exynos9820-beyond1lte_defconfig
+
+    # Disable stack protector + crypto instructions
+    scripts/config --file $O/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+    scripts/config --file $O/.config --disable CONFIG_ARM64_SHA2
+    scripts/config --file $O/.config --disable CONFIG_ARM64_AES
+
+    make O=$O ARCH=arm64 olddefconfig
+    make -j$(nproc) O=$O ARCH=arm64 \
+      CC=$CC LD=$LD AR=$AR NM=$NM OBJCOPY=$OBJCOPY OBJDUMP=$OBJDUMP STRIP=$STRIP DTC=$DTC
 
         # Generate default config in 'out' directory
         make O=$O ARCH=arm64 exynos9820-beyond1lte_defconfig
