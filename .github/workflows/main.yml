@@ -9,45 +9,48 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make cpio
+        sudo apt-get install -y bc bison flex libssl-dev libelf-dev git make gcc-aarch64-linux-gnu
 
-    - name: Download Clang
-      run: git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
-
-    - name: Setup kernel config
+    - name: Download Clang toolchain
       run: |
-        export ARCH=arm64
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+
+    - name: Prepare kernel config
+      run: |
         mkdir -p out
-        make O=out exynos9820-beyond1lte_defconfig
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-android-
+        export O=out
+        # Standard config
+        make exynos9820-beyond1lte_defconfig O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
 
-        # Disable host-only features
-        scripts/config --file out/.config --disable CONFIG_BLK_DEV_INITRD
-        scripts/config --file out/.config --disable CONFIG_INITRAMFS_SOURCE
-        scripts/config --file out/.config --disable CONFIG_ARM64_VDSO
-        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR
-        scripts/config --file out/.config --disable CONFIG_CC_STACKPROTECTOR_STRONG
+        # Disable stuff that breaks GitHub Actions
+        scripts/config --file $O/.config --disable CONFIG_BLK_DEV_INITRD
+        scripts/config --file $O/.config --disable CONFIG_INITRAMFS_SOURCE
+        scripts/config --file $O/.config --disable CONFIG_ARM64_VDSO
+        scripts/config --file $O/.config --disable CONFIG_HAVE_KPROBES
+        scripts/config --file $O/.config --disable CONFIG_PROBES
 
-        # Overclock CPU & GPU
-        scripts/config --file out/.config --set-val CONFIG_ARM_BIG_LITTLE y
-        scripts/config --file out/.config --set-val CONFIG_ARM64_EXYNOS_FREQ 2900000
-        scripts/config --file out/.config --set-val CONFIG_EXYNOS_GPU_MAX_CLOCK 800000000
+        # Apply your overclock settings (CPU/GPU) here if not already in config
+        # z.B. edit .config oder dtb overlay für GPU/CPU max freq
 
-        make O=out olddefconfig
+        make olddefconfig O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
 
     - name: Build kernel
       run: |
         export ARCH=arm64
-        export PATH=$PWD/clang/bin:$PATH
+        export O=out
+        export PATH=$PWD/clang/bin:$PWD/gcc64/bin:$PWD/gcc32/bin:$PATH
         export CROSS_COMPILE=aarch64-linux-android-
-        export CC=clang
-        export LD=ld.lld
-        export CLANG_TRIPLE=aarch64-linux-gnu-
-        make -j$(nproc) O=out CC=clang LD=ld.lld
+        make -j$(nproc) O=$O ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE CC=clang CLANG_TRIPLE=aarch64-linux-gnu- LD=ld.lld
 
     - name: Upload kernel
       uses: actions/upload-artifact@v4
